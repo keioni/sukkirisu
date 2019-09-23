@@ -23,25 +23,34 @@ def print_result(items):
     ))
 
 
+def normalize_rank_level(rank_level):
+  if rank_level == 'type1':
+    result = '超スッキリす！'
+  elif rank_level == 'type4':
+    result = 'ガッカリす...'
+  else:
+    if rank_level == 'type2':
+      result = 'スッキリす'
+    elif rank_level == 'type3':
+      result = 'まあまあスッキリす'
+  return result
+
+
 def get_sukkirisu(soup):
   items = dict()
   for div_body in soup.find_all("div", class_='flTxt'):
     part = div_body.find_all('p')
-    rank_level = div_body.attrs['class'][0]
-    if len(part) == 3:
-      month = part[0].string
-      rank = part[1].string
-      message = part[2].string
-    elif len(part) == 2:
-      month = part[0].string
-      rank = ''
-      message = part[1].string
     item = {
-      'rank': rank,
-      'rank_level': rank_level,
-      'text': message,
-      'color': div_body.find(id='color').string
+      'month': part[0].string,
+      'color': div_body.find(id='color').string,
+      'rank_level': normalize_rank_level(div_body.attrs['class'][0])
     }
+    if len(part) == 3:
+      item['rank'] = part[1].string
+      item['message'] = part[2].string
+    elif len(part) == 2:
+      item['rank'] = ''
+      item['message'] = part[1].string
     month = div_body.find("p", class_="monthTxt").string
     items[month] = item
   return items
