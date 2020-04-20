@@ -1,39 +1,38 @@
 import json
-import urllib
+import urllib.parse
+import urllib.request
+from typing import Dict, Optional
+
 from bs4 import BeautifulSoup
 
 
 def print_result(items):
   for month in items:
-    if items[month]['rank_level'] == 'type1':
-      rank = '超スッキリす！'
-    elif items[month]['rank_level'] == 'type4':
-      rank = 'ガッカリす...'
-    else:
-      if items[month]['rank_level'] == 'type2':
-        rank = 'スッキリす'
-      elif items[month]['rank_level'] == 'type3':
-        rank = 'まあまあスッキリす'
-      rank = '{} {}'.format(items[month]['rank'], rank)
-    print('{} : {}月 {}。ラッキーカラーは{}。'.format(
-        rank,
+    print('{} {} : {}月 {}。ラッキーカラーは{}。'.format(
+        items[month]['rank']['num'],
+        items[month]['rank']['string'],
         month,
-        items[month]['text'],
+        items[month]['message'],
         items[month]['color']
     ))
 
 
-def normalize_rank_level(rank_level):
-  if rank_level == 'type1':
-    result = '超スッキリす！'
-  elif rank_level == 'type4':
-    result = 'ガッカリす...'
+def normalize_rank(rank: str) -> Dict[str, str]:
+  result: Dict[str, str] = dict()
+  if rank == 'type1':
+    result['num'] = '1位'
+    result['string'] = '超スッキリす！'
+  elif rank == 'type4':
+    result['num'] = '12位'
+    result['string'] = 'ガッカリす...'
   else:
-    if rank_level == 'type2':
-      result = 'スッキリす'
-    elif rank_level == 'type3':
-      result = 'まあまあスッキリす'
+    result['num'] = ''
+    if rank == 'type2':
+      result['string'] = 'スッキリす'
+    elif rank == 'type3':
+      result['string'] = 'まあまあスッキリす'
   return result
+
 
 
 def get_sukkirisu(soup):
@@ -43,13 +42,12 @@ def get_sukkirisu(soup):
     item = {
       'month': part[0].string,
       'color': div_body.find(id='color').string,
-      'rank_level': normalize_rank_level(div_body.attrs['class'][0])
+      'rank': normalize_rank(div_body.attrs['class'][0])
     }
     if len(part) == 3:
-      item['rank'] = part[1].string
+      item['rank']['num'] = part[1].string
       item['message'] = part[2].string
     elif len(part) == 2:
-      item['rank'] = ''
       item['message'] = part[1].string
     month = div_body.find("p", class_="monthTxt").string
     items[month] = item
@@ -57,11 +55,11 @@ def get_sukkirisu(soup):
 
 
 def scraping():
-  # url = "http://www.ntv.co.jp/sukkiri/sukkirisu/index.html"
-  # html = request.urlopen(url)
-  # soup = BeautifulSoup(html, "html.parser")
-  soup = BeautifulSoup(
-      open("tmp/sukkirisu.html", encoding='utf8'), features='html.parser')
+  url = "http://www.ntv.co.jp/sukkiri/sukkirisu/index.html"
+  html = urllib.request.urlopen(url)
+  soup = BeautifulSoup(html, "html.parser")
+  # soup = BeautifulSoup(
+  #     open("tmp/sukkirisu.html", encoding='utf8'), features='html.parser')
   items = get_sukkirisu(soup)
   print_result(items)
 
